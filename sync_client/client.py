@@ -33,7 +33,7 @@ from time import sleep, time
 from uuid import uuid4
 from tempfile import NamedTemporaryFile
 from os import unlink, O_CREAT, O_RDONLY, O_WRONLY, environ
-from pyicbinn import icbinn_clnt_create_v4v, icbinn_close, icbinn_lock
+from pyicbinn import icbinn_clnt_create_argo, icbinn_close, icbinn_lock
 from pyicbinn import icbinn_mkdir, icbinn_open, icbinn_pwrite, icbinn_rand
 from pyicbinn import icbinn_readent, icbinn_rename, icbinn_stat, icbinn_pread
 from pyicbinn import icbinn_unlink
@@ -186,16 +186,16 @@ class Icbinn(object):
         self.mount_point = mount_point
         log.info("calling icbinn at (%d, %d)", server_domain_id, server_port)
         try:
-            self.icbinn = icbinn_clnt_create_v4v(server_domain_id,
+            self.icbinn = icbinn_clnt_create_argo(server_domain_id,
                                                  server_port)
         except Exception as exc:
             raise IcbinnConnectError("failed to connect to icbinn server at "
-                                     "(%d, %d): icbinn_clnt_create_v4v "
+                                     "(%d, %d): icbinn_clnt_create_argo "
                                      "failed: %r" % (server_domain_id,
                                                      server_port, exc))
         if self.icbinn is None:
             raise IcbinnConnectError("failed to connect to icbinn server at "
-                                     "(%d, %d): icbinn_clnt_create_v4v "
+                                     "(%d, %d): icbinn_clnt_create_argo "
                                      "failed" % (server_domain_id,
                                                  server_port))
         log.info("successfully contacted icbinn server for %s" % (mount_point))
@@ -790,8 +790,8 @@ def decode_encryption_key(encryption_key):
 
 def vhd_util(*args):
     """Run vhd-util via ICBINN"""
-    environ['LIBVHD_ICBINN_VHD_SERVER'] = 'v4v:0:4878'
-    environ['LIBVHD_ICBINN_KEY_SERVER'] = 'v4v:0:4879'
+    environ['LIBVHD_ICBINN_VHD_SERVER'] = 'argo:0:4878'
+    environ['LIBVHD_ICBINN_KEY_SERVER'] = 'argo:0:4879'
     cmd = ['vhd-util'] + list(args)
     log.info("running [ %s ]", ' '.join(cmd))
     return check_output(cmd, close_fds=True)
@@ -863,7 +863,7 @@ def ensure_vm_exists(uuid, have, sync_name, config, name):
 
     if vmpath is None:
         topdict = dict()
-        topdict['v4v-firewall-rules'] = dict()
+        topdict['argo-firewall-rules'] = dict()
         topdict['rpc-firewall-rules'] = dict()
         topdict['config'] = dict()
         topdict['config']['pci'] = dict()
@@ -908,7 +908,7 @@ def ensure_vm_exists(uuid, have, sync_name, config, name):
                 if nic_index not in nics:
                     nics[nic_index] = dict({'id': nic_index})
                 nics[nic_index][key]= value
-            if daemon in ['v4v', 'rpc', 'pci'] and value == 'true':
+            if daemon in ['argo', 'rpc', 'pci'] and value == 'true':
                 if daemon == 'pci':
                     destdict = topdict['config']['pci']
                 else:
@@ -1097,7 +1097,7 @@ def arrange_vm(myconfig, vmpath, vminfo, diskmap, uuidmap, already_disks):
         if daemon == 'domstore':
             return ((lambda k: get_domstore_key(vmpath, k)),
                     (lambda k, v: set_domstore_key(vmpath, k, v)))
-        if daemon in ['vmparam', 'v4v', 'rpc', 'pci']:
+        if daemon in ['vmparam', 'argo', 'rpc', 'pci']:
             return (None, None)
         if daemon.startswith('nic/'):
             try:
